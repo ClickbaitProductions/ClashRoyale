@@ -17,6 +17,11 @@ TagManager:
   - SpawnArea
   - Border
   - Ally Buildings
+  - Healer
+  - Flag
+  - Battle ground
+  - Blue
+  - Red
   layers:
   - Default
   - TransparentFX
@@ -24,7 +29,7 @@ TagManager:
   - Placement
   - Water
   - UI
-  - 
+  - Towers
   - 
   - Obstacles
   - Ground

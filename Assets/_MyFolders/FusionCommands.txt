@@ -1,0 +1,10 @@
+check if script derives NetworkBehaviour
+
+PlayerRef player;
+
+if (player == runner.LocalPlayer)
+if (runner.IsServer)
+if (HasStateAuthority)   --> True if its the server
+if (HasInputAuthority)   --> True if its the local player
+
+public override void Spawned() {}
