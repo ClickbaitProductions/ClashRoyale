@@ -85,7 +85,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2465077652944936464}
-  - component: {fileID: 649847446}
   m_Layer: 5
   m_Name: Elixir
   m_TagString: Untagged
@@ -115,22 +114,6 @@ RectTransform:
   m_AnchoredPosition: {x: -184.03235, y: -41.65995}
   m_SizeDelta: {x: 311.25372, y: 105.0383}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &649847446
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2465077652944936465}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e837dfe409e6b2849bd6c0ecbf9dd326, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  <ElixirCount>k__BackingField:
-    value: 0
-  elixirSlider: {fileID: 2465077654514719352}
-  elixirCountText: {fileID: 2465077654695690988}
 --- !u!1 &2465077653016750751
 GameObject:
   m_ObjectHideFlags: 0
@@ -865,6 +848,7 @@ GameObject:
   - component: {fileID: 2465077654068040138}
   - component: {fileID: 2465077654068040149}
   - component: {fileID: 7363755594668797928}
+  - component: {fileID: 3084344915802080526}
   m_Layer: 0
   m_Name: Player
   m_TagString: Blue
@@ -907,6 +891,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 7363755594668797928}
+  - {fileID: 3084344915802080526}
 --- !u!114 &7363755594668797928
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -919,13 +904,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7bc8bdde48acf984fabe061d95e5e2ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  knightPrefab: {fileID: 4405554323358461864, guid: 07903ba035d4e1249983f6ac4cc2901e,
-    type: 3}
+  knightSO: {fileID: 11400000, guid: de182f6f394aebb45bdba24fbaf788de, type: 2}
   playerCam: {fileID: 2465077654007137082}
+  elixir: {fileID: 3084344915802080526}
+  playerCanvas: {fileID: 2465077654070052446}
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 576
   playerType: 0
+--- !u!114 &3084344915802080526
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2465077654068040139}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e837dfe409e6b2849bd6c0ecbf9dd326, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <ElixirCount>k__BackingField:
+    value: 0
+  elixirSlider: {fileID: 2465077654514719352}
+  elixirCountText: {fileID: 2465077654695690988}
 --- !u!1 &2465077654070052434
 GameObject:
   m_ObjectHideFlags: 0

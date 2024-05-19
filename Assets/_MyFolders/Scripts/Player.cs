@@ -1,4 +1,5 @@
 using Fusion;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,14 +19,19 @@ public class Player : NetworkBehaviour
     public static float[] spawnRangeX = new float[] { -17.7f, 18.25f };
     public static float[] blueSpawnRangeZ = new float[] { 8.3f, 44 };
     public static float[] redSpawnRangeZ = new float[] { -49, -11f };
-    public static Player localPlayer;
+
+    public static Observer<Player> LocalPlayer = new Observer<Player>(null);
     public static Camera localCam;
 
-    [SerializeField] GameObject knightPrefab;
+    [SerializeField] CharacterSO knightSO;
     [SerializeField] Transform playerCam;
-    public LayerMask groundLayerMask;
+    public Elixir elixir;
+    [SerializeField] Canvas playerCanvas;
 
+    public LayerMask groundLayerMask;
     public PlayerType playerType;
+
+    public event Action OnCanvasFlip;
 
     public static void AddPlayer(Player player, PlayerType playerType, PlayerRef? playerRef = null, NetworkObject playerNetworkObject = null)
     {
@@ -55,13 +61,12 @@ public class Player : NetworkBehaviour
             AddPlayer(this, PlayerType.Blue, playerRef, networkPlayerObject);
             gameObject.name = "P1 - Blue - Local - Host";
             playerType = PlayerType.Blue;
-            localPlayer = this;
+            LocalPlayer.Value = this;
             localCam = playerCam.GetComponent<Camera>();
         } else
         {
             // I'm the 2nd person to join - red, on host side - not local
-            playerCam.gameObject.SetActive(false);
-            
+            SetUpNonLocal();
             AddPlayer(this, PlayerType.Red, playerRef, networkPlayerObject);
             players[PlayerType.Red].gameObject.name = "P2 - Red - Not Local - Client";
         }
@@ -87,28 +92,45 @@ public class Player : NetworkBehaviour
             AddPlayer(this, PlayerType.Red);
 
             playerType = PlayerType.Red;
-            localPlayer = this;
+            LocalPlayer.Value = this;
             localCam = playerCam.GetComponent<Camera>();
+
+            foreach (Transform canvas in Singleton.Instance.towerCanvases)
+            {
+                if (canvas != null)
+                {
+                    OnCanvasFlip?.Invoke();
+
+                    Vector3 canvasPos = canvas.localPosition;
+                    canvasPos.y -= 1;
+                    canvas.localPosition = canvasPos;
+                }
+            }
+
+            Singleton.Instance.camPos = Singleton.Instance.redCamPos;
         } else
         {
             // I'm blue on client side - not local
             gameObject.name = "P1 - Blue - Not Local - Client";
             gameObject.tag = "Blue";
 
-            playerCam.gameObject.SetActive(false);
-
+            SetUpNonLocal();
             AddPlayer(this, PlayerType.Blue);
         }
+    }
+
+    void SetUpNonLocal()
+    {
+        playerCam.gameObject.SetActive(false);
+        playerCanvas.gameObject.SetActive(false);
     }
 
     public override void FixedUpdateNetwork()
     {
         if (GetInput(out NetworkInputData data))
         {
-            print("Got input");
             if (HasStateAuthority)
             {
-                print("Has authority");
                 if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0))
                 {
                     SpawnCharacter(data);
@@ -117,14 +139,17 @@ public class Player : NetworkBehaviour
         }
     }
 
+    // Called on host
     void SpawnCharacter(NetworkInputData data)
     {
-        print("Spawning");
-        Runner.Spawn(knightPrefab, data.clickPos, Quaternion.identity, Object.InputAuthority, (runner, instance) =>
+        if (elixir.TryConsumeElixir(knightSO.elixerCost))
         {
-            // Initialize the agent before synchronizing it
-            instance.GetComponent<AgentWalker>().Init(data.playerType);
-        });
+            Runner.Spawn(knightSO.prefab, data.clickPos, Quaternion.identity, Object.InputAuthority, (runner, instance) =>
+            {
+                // Initialize the agent before synchronizing it
+                instance.GetComponent<AgentWalker>().Init(data.playerType);
+            });
+        }
     }
 
 }

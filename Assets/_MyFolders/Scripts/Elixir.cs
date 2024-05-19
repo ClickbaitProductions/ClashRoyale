@@ -1,23 +1,40 @@
+using Fusion;
 using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Elixir : MonoBehaviour
+public class Elixir : NetworkBehaviour
 {
 
+    [Networked] int elixirCountNetworked {  get; set; }
     [field: SerializeField] public Observer<int> ElixirCount { get; private set; } = new Observer<int>(0);
     [SerializeField] Slider elixirSlider;
     [SerializeField] TextMeshProUGUI elixirCountText;
 
+    bool isLocal = true;
     bool incrementing = false;
 
     void Start()
     {
-        ElixirCount.AddListener((count) => StartCoroutine(OnElixirUpdate()));
+        if (HasStateAuthority)
+        {
+            ElixirCount.AddListener((count) => StartCoroutine(OnElixirUpdate()));
+            ElixirCount.AddListener((count) => elixirCountNetworked = count);
+        }
+
         ElixirCount.AddListener((count) => UpdateElixirUI());
 
         ElixirCount.Invoke();
+    }
+
+    void Update()
+    {
+        if (!HasStateAuthority)
+        {
+            // Copy server's elixir values if its the client
+            ElixirCount.Value = elixirCountNetworked;
+        }
     }
 
     IEnumerator OnElixirUpdate()

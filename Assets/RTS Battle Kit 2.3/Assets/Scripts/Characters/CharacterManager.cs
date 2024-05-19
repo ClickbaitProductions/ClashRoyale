@@ -87,7 +87,7 @@ public class CharacterManager : MonoBehaviour {
 		//find some objects
 		characterParent = new GameObject("Characters");	
 		selectButton = GameObject.Find("Character selection button");
-		target = GameObject.Find("target");
+		target = GameObject.Find("targetPos");
 		
 		if(!GameObject.Find("Mobile"))
 			mobileDragInput = false;

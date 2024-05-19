@@ -1,5 +1,5 @@
 using Fusion;
-using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
@@ -7,26 +7,26 @@ using UnityEngine.UI;
 public class AgentWalker : NetworkBehaviour
 {
 
-    public event Action OnWalk;
-    public event Action OnStop;
+    public Observer<bool> IsWalking = new Observer<bool>(false);
 
-    [SerializeField] float attackRange = 5;
-    [SerializeField] float walkingSpeed = 4;
+    [SerializeField] CharacterSO characterSO;
 
     [SerializeField] Image healthBarFill;
+    [SerializeField] TextMeshProUGUI healthText;
+    [SerializeField] Transform canvasTransform;
     [SerializeField] Color redHealthBarCol;
+    AttackBase attack;
 
     [Networked] PlayerType type { get; set; }
 
-    Transform leftEnemyTower;
-    Transform rightEnemyTower;
+    Health leftEnemyTowerHealth;
+    Health rightEnemyTowerHealth;
+
+    Health targetHealth;
+    Vector3 targetPos;
 
     NavMeshAgent agent;
-
-    Vector3 target;
-    float targetThreshold = 2;
-
-    bool isWalking = false;
+    
     bool isFirstWalkingFrame = true;
 
     public void Init(PlayerType playerType)
@@ -44,52 +44,98 @@ public class AgentWalker : NetworkBehaviour
     void InitializeAgent()
     {
         agent = GetComponent<NavMeshAgent>();
+        attack = GetComponent<AttackBase>();
 
-        agent.speed = walkingSpeed;
+        agent.speed = characterSO.walkingSpeed;
         Vector3 eulerAngles = transform.eulerAngles;
 
         if (type == PlayerType.Blue)
         {
+            if (HasStateAuthority)
+            {
+                // I'm blue and my guy is going to invade
+                Vector3 rot = canvasTransform.localEulerAngles;
+                rot.y = 180;
+                canvasTransform.localEulerAngles = rot;
+
+                Vector3 pos = canvasTransform.localPosition;
+                pos.z = 0.57f;
+                canvasTransform.localPosition = pos;
+            } else
+            {
+                // I'm red and blue guy is invading
+                Vector3 rot = canvasTransform.localEulerAngles;
+                rot.y = 0;
+                canvasTransform.localEulerAngles = rot;
+
+                Vector3 pos = canvasTransform.localPosition;
+                pos.z = -1.67f;
+                canvasTransform.localPosition = pos;
+            }
+
             gameObject.name = "BlueKnight";
 
             eulerAngles.y = 180;
-            leftEnemyTower = Singleton.Instance.leftRedTower;
-            rightEnemyTower = Singleton.Instance.rightRedTower;
+            leftEnemyTowerHealth = Singleton.Instance.leftRedTower.GetComponent<Health>();
+            rightEnemyTowerHealth = Singleton.Instance.rightRedTower.GetComponent<Health>();
         } else if (type == PlayerType.Red)
         {
+            if (!HasStateAuthority)
+            {
+                // It's the red local player on the client side
+                Vector3 rot = canvasTransform.localEulerAngles;
+                rot.y = 180;
+                canvasTransform.localEulerAngles = rot;
+
+                Vector3 pos = canvasTransform.localPosition;
+                pos.z = 1.75f;
+                canvasTransform.localPosition = pos;
+            } else
+            {
+                // I'm blue and red guy is invading
+                Vector3 rot = canvasTransform.localEulerAngles;
+                rot.y = 0;
+                canvasTransform.localEulerAngles = rot;
+
+                Vector3 pos = canvasTransform.localPosition;
+                pos.z = -0.59f;
+                canvasTransform.localPosition = pos;
+            }
+
             gameObject.name = "RedKnight";
             gameObject.tag = "Red";
             healthBarFill.color = redHealthBarCol;
+            healthText.color = redHealthBarCol;
 
             eulerAngles.y = 0;
-            leftEnemyTower = Singleton.Instance.leftBlueTower;
-            rightEnemyTower = Singleton.Instance.rightBlueTower;
+            leftEnemyTowerHealth = Singleton.Instance.leftBlueTower.GetComponent<Health>();
+            rightEnemyTowerHealth = Singleton.Instance.rightBlueTower.GetComponent<Health>();
         }
 
         transform.eulerAngles = eulerAngles;
     }
 
-    Vector3 GetNearestTower()
+    Health GetNearestTower()
     {
         if (transform.position.x >= 0)
-            return leftEnemyTower.position;
+            return leftEnemyTowerHealth;
         else
-            return rightEnemyTower.position;
+            return rightEnemyTowerHealth;
     }
 
     void CalculateTarget()
     {
-        Vector3 tower = GetNearestTower();
-        tower.y = transform.position.y;
+        targetHealth = GetNearestTower();
+        Vector3 _towerPos = targetHealth.transform.position;
+        _towerPos.y = transform.position.y;
 
-        target = tower;
+        targetPos = _towerPos;
     }
 
     void SetTarget()
     {
-        agent.SetDestination(target);
-        OnWalk?.Invoke();
-        isWalking = true;
+        agent.SetDestination(targetPos);
+        IsWalking.Value = true;
         isFirstWalkingFrame = true;
     }
 
@@ -102,9 +148,9 @@ public class AgentWalker : NetworkBehaviour
             isFirstWalkingFrame = false;
         } else
         {
-            if (isWalking)
+            if (IsWalking.Value)
             {
-                if (agent.remainingDistance < targetThreshold + attackRange)
+                if (agent.remainingDistance < characterSO.attackRange)
                     StopAgent();
             }
         }
@@ -113,8 +159,8 @@ public class AgentWalker : NetworkBehaviour
     void StopAgent()
     {
         agent.isStopped = true;
-        OnStop?.Invoke();
-        isWalking = false;
+        IsWalking.Value = false;
+        attack.Initialize(targetHealth, characterSO);
     }
 
 }

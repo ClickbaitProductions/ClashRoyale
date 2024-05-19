@@ -16,11 +16,6 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef playerRef)
     {
-        if (playerRef == runner.LocalPlayer)
-        {
-            Singleton.Instance.runner = runner;
-        }
-
         if (runner.IsServer)
         {
             NetworkObject networkPlayerObject = runner.Spawn(playerPrefab, Vector3.zero, Quaternion.identity, playerRef);
@@ -55,26 +50,28 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         NetworkInputData data = new NetworkInputData();
         Vector3 mouseWorldPos = Vector3.one * 100;
 
-        if (Player.localPlayer != null)
+        if (Player.LocalPlayer.Value != null)
         {
             float[] spawnRangeZ = Player.blueSpawnRangeZ;
-            if (Player.localPlayer.playerType == PlayerType.Red)   // Runs only on host
+            if (Player.LocalPlayer.Value.playerType == PlayerType.Red)   // Runs only on host
                 spawnRangeZ = Player.redSpawnRangeZ;
 
             Ray ray = Player.localCam.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit, 300, Player.localPlayer.groundLayerMask))
+            if (Physics.Raycast(ray, out RaycastHit hit, 300, Player.LocalPlayer.Value.groundLayerMask))
                 mouseWorldPos = hit.point;
 
             if (clicked && (mouseWorldPos.x < Player.spawnRangeX[0] || mouseWorldPos.x > Player.spawnRangeX[1] ||
                 mouseWorldPos.z < spawnRangeZ[0] || mouseWorldPos.z > spawnRangeZ[1] || mouseWorldPos.y > 0.1f))
+            {
                 clicked = false;
+            }
 
-            data.playerType = Player.localPlayer.playerType;
+            data.playerType = Player.LocalPlayer.Value.playerType;
         } else
         {
             clicked = false;
         }
-        
+
         data.buttons.Set(NetworkInputData.MOUSEBUTTON0, clicked);
 
         mouseWorldPos.y = 0;
@@ -138,11 +135,11 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (_runner == null)
         {
-            if (GUI.Button(new Rect(0, 0, 200, 40), "Host"))
+            if (GUI.Button(new Rect(0, 0, 500, 100), "Host"))
             {
                 StartGame(GameMode.Host);
             }
-            if (GUI.Button(new Rect(0, 40, 200, 40), "Join"))
+            if (GUI.Button(new Rect(0, 100, 500, 100), "Join"))
             {
                 StartGame(GameMode.Client);
             }

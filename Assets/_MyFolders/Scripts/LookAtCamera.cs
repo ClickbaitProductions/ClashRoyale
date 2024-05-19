@@ -1,20 +1,52 @@
+using Fusion;
 using UnityEngine;
 
-public class LookAtCamera : MonoBehaviour
+public class LookAtCamera : NetworkBehaviour
 {
 
-    Transform cam;
+    [SerializeField] bool isAgent = false;
+
+    float zRot;
+    bool flipped = false;
 
     void Start()
     {
-        cam = Player.localCam.transform;
+        zRot = transform.localEulerAngles.z;
+        Player.LocalPlayer.AddListener(OnGotLocalPlayer);
+    }
+
+    void OnGotLocalPlayer(Player localPlayer)
+    {
+        localPlayer.OnCanvasFlip += () =>
+        {
+            if (!flipped)
+            {
+                zRot += 180;
+                flipped = true;
+            }
+        };
     }
 
     void Update()
     {
-        Vector3 directionToCamera = cam.position - transform.position;
-        Quaternion rotation = Quaternion.LookRotation(directionToCamera, Vector3.up);
-        transform.rotation = Quaternion.Euler(rotation.eulerAngles.x, transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);
+        Vector3 directionToCamera = Singleton.Instance.camPos - transform.position;
+        Quaternion worldRot = Quaternion.LookRotation(directionToCamera);
+
+        Quaternion parentRotation = transform.parent.rotation;
+        Quaternion localRotation = Quaternion.Inverse(parentRotation) * worldRot;
+
+        Vector3 localEulerAngles = localRotation.eulerAngles;
+        localEulerAngles.y = transform.localEulerAngles.y;
+        localEulerAngles.z = zRot;
+
+        //if (!HasStateAuthority && isAgent)
+        //{
+        //    // If im the client, looking from red's side, the agent's health bar would be off
+        //    float offset = -90 - localEulerAngles.x;
+        //    localEulerAngles.x += offset * 2;
+        //}
+
+        transform.localEulerAngles = localEulerAngles;
     }
 
 }
